@@ -44,79 +44,6 @@ from verl.utils.hdfs_io import makedirs
 from verl.utils.model import compute_position_id_with_mask
 from verl.workers.fsdp_workers import ActorRolloutRefWorker
 
-LOCAL_PORT = 8005
-REMOTE_PORT = 8005
-SSH_SERVER = "kdh0901@slurm.snu.ac.kr"
-
-
-@contextmanager
-def ssh_tunnel(local_port, remote_port, ssh_server, max_retries=10, retry_interval=2):
-    """A context manager to establish and clean up an SSH tunnel."""
-    password_file = os.path.expanduser("./bass_password.txt")
-    if not os.path.exists(password_file):
-        raise FileNotFoundError(f"Password file not found at: {password_file}")
-    # The SSH command to start the tunnel
-    ssh_command = [
-        "sshpass",
-        "-f",
-        password_file,
-        "ssh",
-        "-p",
-        "59000",
-        "-L",
-        f"{local_port}:gpu6:{remote_port}",
-        ssh_server,
-        "-N",
-        "-o",
-        "StrictHostKeyChecking=no",  # Helps avoid host key prompts
-    ]
-
-    max_retries = 10
-    tunnel_process = None
-
-    for attempt in range(max_retries):
-        try:
-            # 1. SETUP: Start the SSH tunnel process
-            print(f"[*] Starting SSH tunnel (Attempt {attempt + 1}/{max_retries})...")
-            tunnel_process = subprocess.Popen(ssh_command)
-
-            # Give the tunnel a moment to establish
-            time.sleep(2)
-
-            # Check if the process started correctly
-            if tunnel_process.poll() is not None:
-                # Get return code/output if possible, though Popen with default args doesn't capture output
-                raise RuntimeError(f"SSH tunnel process exited with code {tunnel_process.returncode}")
-
-            print(f"[*] Tunnel active: localhost:{local_port} -> {ssh_server}:{remote_port}")
-            break  # Success!
-
-        except Exception as e:
-            print(f"[!] SSH tunnel failed on attempt {attempt + 1}: {e}")
-            if tunnel_process:
-                tunnel_process.terminate()
-                tunnel_process.wait()
-                tunnel_process = None
-
-            if attempt < max_retries - 1:
-                print("[*] Retrying in 2 seconds...")
-                time.sleep(2)
-            else:
-                print("[!] All retry attempts failed.")
-                raise
-
-    try:
-        # 2. YIELD: The code inside the 'with' block runs here
-        yield
-
-    finally:
-        # 3. TEARDOWN: This code runs after the 'with' block finishes or fails
-        if tunnel_process:
-            print("\n[*] Terminating the SSH tunnel process.")
-            tunnel_process.terminate()
-            tunnel_process.wait()
-            print("[*] Tunnel closed.")
-
 
 ANSWER_RE = re.compile(r"<answer>\s*(.*?)\s*</answer>", re.IGNORECASE | re.DOTALL)
 
@@ -300,11 +227,6 @@ def main_task(config):
         topk=config.reranker.topk,
         retriever_initial_topk=config.reranker.retriever_initial_topk,
         return_full_documents=config.reranker.get("return_full_documents", False),
-        score_tts=config.get("score_tts", False),
-        tts_n=config.get("tts_n", 5),
-        tts_strat=config.get("tts_strat", "max"),
-        tts_alpha=config.get("tts_alpha", 5.0),
-        return_token_counts=config.get("return_token_counts", False),
     )
 
     # Agent config preparation
@@ -448,7 +370,6 @@ def main_task(config):
 
 
 if __name__ == "__main__":
-    # with ssh_tunnel(LOCAL_PORT, REMOTE_PORT, SSH_SERVER):
     os.unsetenv("ROCR_VISIBLE_DEVICES")
     os.environ.pop("ROCR_VISIBLE_DEVICES", None)
     print("ROCR_VISIBLE_DEVICES:", os.environ.get("ROCR_VISIBLE_DEVICES", None))

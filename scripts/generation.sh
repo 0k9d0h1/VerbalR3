@@ -1,12 +1,12 @@
 unset ROCR_VISIBLE_DEVICES
 
-export model_path="0k9d0h1/7b-planner-1.5b-reranker-nq-hotpotqa-filtered-tp-reranker"
-export data_path="/home/kdh0901/Reranker/data/planner/test_2000.parquet"
-export base_save_path="/home/kdh0901/Reranker/validation_data/verbalR3_7b_tts/generation_test"
+export model_path="0k9d0h1/3b-planner-1.5b-reranker-nq-hotpotqa-filtered-tp-reranker"
+export data_path="./data/planner/test_2000.parquet"
+export base_save_path="./validation_data/verbalR3_3b/generation_test"
 
-srun --mpi=pmi2 python3 -m verl.trainer.main_generation \
+python3 -m verl.trainer.main_generation \
     trainer.nnodes=1 \
-    trainer.n_gpus_per_node=2 \
+    trainer.n_gpus_per_node=1 \
     data.shuffle=False \
     data.path=$data_path \
     data.prompt_key=prompt \
@@ -34,10 +34,7 @@ srun --mpi=pmi2 python3 -m verl.trainer.main_generation \
     reranker.size="3b" \
     do_search=True \
     output_format="json" \
-    score_tts=true \
-    tts_n=5 \
-    tts_strat="branch_bernoulli" \
-    output_dir="/home/kdh0901/Reranker/validation_data/verbalR3_7b_tts"
+    output_dir="./validation_data/verbalR3_3b"
 
 echo "========================================================="
 echo "All experiments complete."

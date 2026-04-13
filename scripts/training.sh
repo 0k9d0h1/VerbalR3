@@ -6,7 +6,7 @@ VAL_DATA="./data/planner/test_2000.parquet"
 EXPERIMENT_NAME="test"
 MAX_TURNS=4
 
-srun python3 -m verl.trainer.main_ppo \
+python3 -m verl.trainer.main_ppo \
 	algorithm.adv_estimator="grpo" \
 	data.train_batch_size=128 \
 	data.val_batch_size=256 \
@@ -40,6 +40,7 @@ srun python3 -m verl.trainer.main_ppo \
 	actor_rollout_ref.rollout.mode=sync \
 	actor_rollout_ref.rollout.gpu_memory_utilization=0.8 \
 	actor_rollout_ref.rollout.n=5 \
+	actor_rollout_ref.rollout.seed=0 \
 	actor_rollout_ref.rollout.response_length=1024 \
 	actor_rollout_ref.ref.log_prob_micro_batch_size_per_gpu=256 \
 	actor_rollout_ref.ref.fsdp_config.param_offload=True \
@@ -58,7 +59,7 @@ srun python3 -m verl.trainer.main_ppo \
 	trainer.logger=['console','wandb'] \
 	trainer.project_name='planner_rl' \
 	trainer.experiment_name=$EXPERIMENT_NAME \
-	trainer.n_gpus_per_node=2 \
+	trainer.n_gpus_per_node=1 \
 	trainer.nnodes=1 \
 	trainer.save_freq=10 \
 	trainer.validation_data_dir=./validation_data/$EXPERIMENT_NAME \
@@ -66,7 +67,7 @@ srun python3 -m verl.trainer.main_ppo \
 	data.train_files="$TRAIN_DATA" \
 	data.val_files="$VAL_DATA" \
 	max_turns=$MAX_TURNS \
-	reranker.url="http://localhost:8002/rerank/batch" \
+	reranker.url="http://localhost:8005/rerank/batch" \
 	reranker.topk=3 \
 	reranker.retriever_initial_topk=15 \
 	reranker.return_full_documents=false \

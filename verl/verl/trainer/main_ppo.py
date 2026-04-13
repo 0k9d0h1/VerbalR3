@@ -33,61 +33,6 @@ from verl.trainer.ppo.utils import need_critic, need_reference_policy
 from verl.utils.config import validate_config
 from verl.utils.device import is_cuda_available
 from verl.utils.import_utils import load_extern_type
-import subprocess
-from contextlib import contextmanager
-
-
-LOCAL_PORT = 8002
-REMOTE_PORT = 8002
-SSH_SERVER = "kdh0901@slurm.snu.ac.kr"
-
-
-@contextmanager
-def ssh_tunnel(local_port, remote_port, ssh_server):
-    """A context manager to establish and clean up an SSH tunnel."""
-    password_file = os.path.expanduser("~/.ssh/slurm_password.txt")
-    if not os.path.exists(password_file):
-        raise FileNotFoundError(f"Password file not found at: {password_file}")
-
-    # Use 'sshpass -f' to read the password from the file
-    ssh_command = [
-        "sshpass",
-        "-f",
-        password_file,
-        "ssh",
-        "-L",
-        f"{local_port}:gpu3:{remote_port}",
-        ssh_server,
-        "-N",
-        "-o",
-        "StrictHostKeyChecking=no",  # Helps avoid host key prompts
-    ]
-
-    tunnel_process = None
-    try:
-        # 1. SETUP: Start the SSH tunnel process
-        print("[*] Starting SSH tunnel...")
-        tunnel_process = subprocess.Popen(ssh_command)
-
-        # Give the tunnel a moment to establish
-        time.sleep(2)
-
-        # Check if the process started correctly
-        if tunnel_process.poll() is not None:
-            raise RuntimeError("SSH tunnel failed to start. Check credentials/connection.")
-
-        print(f"[*] Tunnel active: localhost:{local_port} -> {ssh_server}:{remote_port}")
-
-        # 2. YIELD: The code inside the 'with' block runs here
-        yield
-
-    finally:
-        # 3. TEARDOWN: This code runs after the 'with' block finishes or fails
-        if tunnel_process:
-            print("\n[*] Terminating the SSH tunnel process.")
-            tunnel_process.terminate()
-            tunnel_process.wait()
-            print("[*] Tunnel closed.")
 
 
 @hydra.main(config_path="config", config_name="ppo_trainer", version_base=None)
@@ -445,5 +390,4 @@ def create_rl_sampler(data_config, dataset):
 
 
 if __name__ == "__main__":
-    # with ssh_tunnel(LOCAL_PORT, REMOTE_PORT, SSH_SERVER):
     main()

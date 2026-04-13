@@ -1,5 +1,4 @@
 conda activate vllm_serve
-export CUDA_VISIBLE_DEVICES=0,1
 
 echo "SERVING SCRIPT (REPLICATION): Starting on GPUs: $CUDA_VISIBLE_DEVICES"
 
@@ -27,7 +26,7 @@ for i in "${!gpus[@]}"; do
         --port $port \
         --max-model-len 4096 \
         --disable-uvicorn-access-log \
-        --gpu-memory-utilization 0.95 \
+        --gpu-memory-utilization 0.95 &
     
     VLLM_PIDS+=("$!")
     VLLM_URLS+=("$url")

@@ -75,17 +75,17 @@ def batch_generate(start, queries, answers):
 
 
 ray.init(
-    num_gpus=2,  # tell the scheduler two GPUs exist
+    num_gpus=1,
     include_dashboard=False,
 )
 
-train_path = "/home/kdh0901/Desktop/Reranker/data/planner/train.parquet"
+train_path = "./data/planner/train.parquet"
 model_name = "Qwen/Qwen2.5-3B"
 batch_size = 512
 num_return_sequences = 10
 llm = LLM(
     model=model_name,
-    tensor_parallel_size=2,
+    tensor_parallel_size=1,
     dtype="bfloat16",
     trust_remote_code=True,
 )
@@ -112,11 +112,8 @@ for start in tqdm(range(0, len(train_df), batch_size)):
 
 
 print(f"Model answerable indices: {len(model_answerable_idx)}")
-print("Saving direct unanswerable documents as jsonl")
 print("Saving direct model answerable indices as pickle")
-with open(
-    "/home/kdh0901/Desktop/Reranker/data/planner/answerable_indices.pkl", "wb"
-) as f:
+with open("./data/planner/answerable_indices.pkl", "wb") as f:
     pickle.dump(
         {
             "model_answerable": model_answerable_idx,

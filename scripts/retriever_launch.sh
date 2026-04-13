@@ -1,4 +1,4 @@
-file_path=./data/rag
+file_path=./data/wikipedia
 index_file=$file_path/e5_Flat.index
 corpus_file=$file_path/wiki-18.jsonl
 retriever_name=e5

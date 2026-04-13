@@ -1,5 +1,5 @@
 echo "--> Starting vLLM server on port 8001..."
-srun vllm serve 0k9d0h1/reranker1.5b-sft --tensor-parallel-size 2 --gpu-memory-utilization 0.95 --disable-uvicorn-access-log --port 8001 &
+vllm serve 0k9d0h1/reranker1.5b-sft --tensor-parallel-size 2 --gpu-memory-utilization 0.95 --disable-uvicorn-access-log --port 8001 &
 
 echo "--> Waiting for vLLM server to become available..."
 while ! curl -s http://localhost:8001/health; do

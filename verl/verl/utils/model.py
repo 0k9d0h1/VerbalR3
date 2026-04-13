@@ -28,7 +28,7 @@ from transformers import (
     AutoConfig,
     AutoModelForCausalLM,
     GenerationConfig,
-    MistralForSequenceClassification,
+    # MistralForSequenceClassification,
     PretrainedConfig,
     PreTrainedModel,
 )
