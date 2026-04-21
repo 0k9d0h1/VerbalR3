@@ -13,84 +13,10 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List, Any, Optional, Dict
 from transformers import AutoTokenizer
-import subprocess
-from contextlib import contextmanager
 
 # --- Imports from previous skeleton ---
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
-
-LOCAL_PORT = 7999
-REMOTE_PORT = 8000
-SSH_SERVER = "kdh0901@bass.snu.ac.kr"
-
-
-@contextmanager
-def ssh_tunnel(local_port, remote_port, ssh_server, max_retries=10, retry_interval=2):
-    """A context manager to establish and clean up an SSH tunnel."""
-    password_file = os.path.expanduser("./bass_password.txt")
-    if not os.path.exists(password_file):
-        raise FileNotFoundError(f"Password file not found at: {password_file}")
-
-    # Use 'sshpass -f' to read the password from the file
-    ssh_command = [
-        "sshpass",
-        "-f",
-        password_file,
-        "ssh",
-        "-p",
-        "59000",
-        "-L",
-        f"{local_port}:localhost:{remote_port}",
-        ssh_server,
-        "-N",
-        "-o",
-        "StrictHostKeyChecking=no",  # Helps avoid host key prompts
-    ]
-
-    tunnel_process = None
-    try:
-        # 1. SETUP: Start the SSH tunnel process
-        for i in range(max_retries):
-            print(f"[*] Starting SSH tunnel (attempt {i + 1}/{max_retries})...")
-            tunnel_process = subprocess.Popen(ssh_command)
-
-            # Give the tunnel a moment to establish
-            time.sleep(2)
-
-            # Check if the process started correctly
-            if tunnel_process.poll() is None:
-                print(
-                    f"[*] Tunnel active: localhost:{local_port} -> {ssh_server}:{remote_port}"
-                )
-                break
-
-            # If the process failed, log it and retry
-            stdout, stderr = tunnel_process.communicate()
-            print(
-                f"[*] SSH tunnel failed to start (attempt {i + 1}/{max_retries}).\nReturn Code: {tunnel_process.returncode}"
-            )
-
-            tunnel_process = None
-            if i < max_retries - 1:
-                print(f"[*] Retrying in {retry_interval} seconds...")
-                time.sleep(retry_interval)
-
-        if tunnel_process is None:
-            raise RuntimeError(
-                f"SSH tunnel failed to start after {max_retries} attempts."
-            )
-
-        # 2. YIELD: The code inside the 'with' block runs here
-        yield
-
-    finally:
-        # 3. TEARDOWN: This code runs after the 'with' block finishes or fails
-        if tunnel_process:
-            print("\n[*] Terminating the SSH tunnel process.")
-            tunnel_process.terminate()
-            tunnel_process.wait()
-            print("[*] Tunnel closed.")
 
 
 # --- 2. Pydantic Models for API Contract ---
@@ -639,5 +565,4 @@ if __name__ == "__main__":
 
     print(f"Model {args.model_name_or_path} loaded. Starting server...")
 
-    with ssh_tunnel(LOCAL_PORT, REMOTE_PORT, SSH_SERVER):
-        uvicorn.run(app, host="0.0.0.0", port=8002)
+    uvicorn.run(app, host="0.0.0.0", port=8002)
