@@ -1,4 +1,5 @@
-conda activate vllm_serve
+# We used 0k9d0h1/reranker1.5b-sft for training, and 0k9d0h1/rearnker3b-sft for inference.
+MODEL_NAME="0k9d0h1/reranker1.5b-sft"
 
 echo "SERVING SCRIPT (REPLICATION): Starting on GPUs: $CUDA_VISIBLE_DEVICES"
 
@@ -22,7 +23,7 @@ for i in "${!gpus[@]}"; do
     
     echo "SERVING SCRIPT: Starting vLLM server on GPU $gpu_id (Port $port)..."
     
-    CUDA_VISIBLE_DEVICES=$gpu_id vllm serve 0k9d0h1/reranker3b-sft \
+    CUDA_VISIBLE_DEVICES=$gpu_id vllm serve $MODEL_NAME \
         --port $port \
         --max-model-len 4096 \
         --disable-uvicorn-access-log \
@@ -48,7 +49,7 @@ echo "SERVING SCRIPT: Starting Reranker server on port 8005..."
 echo "SERVING SCRIPT: Connecting to vLLM URLs: $vllm_url_string"
 
 python -m utils.dp_reranker_server \
-    --model-name-or-path "0k9d0h1/reranker3b-sft" \
+    --model-name-or-path $MODEL_NAME \
     --max-output-tokens 1024 \
     --max-score 5 \
     --concurrency 1024 \
